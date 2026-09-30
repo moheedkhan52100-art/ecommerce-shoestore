@@ -1,0 +1,22 @@
+﻿# Dependencies
+node_modules/
+
+# Environment variables
+.env
+
+# Build files
+dist/
+build/
+
+# Videos anywhere in the project
+*.mp4
+*.MP4
+*.mov
+*.MOV
+
+# Frontend videos
+frontend/public/videos/
+frontend/videos/
+
+# Backend uploads
+backend/uploads/
