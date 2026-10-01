@@ -45,9 +45,9 @@ function StoreFooter() {
 
       <div className="footer-bottom">
         <section>
-          <h3>PAYMENT PARTNER</h3>
-          <div className="payment-partners" aria-label="Payment partners">
-            <span>AMEX</span><span>Mastercard</span><span>VISA</span><span>Cirrus</span><span>Paytm</span>
+          <h3>PAYMENT METHOD</h3>
+          <div className="payment-partners" aria-label="Payment method">
+            <span>Cash on delivery</span>
           </div>
         </section>
         <section className="footer-socials">

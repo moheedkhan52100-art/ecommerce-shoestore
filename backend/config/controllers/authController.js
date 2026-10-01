@@ -6,7 +6,8 @@ const { logAdminAction } = require("../utils/logger");
 
 const loginAdmin = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { password } = req.body;
+    const email = String(req.body.email || "").trim().toLowerCase();
 
     // Check fields
     if (!email || !password) {
@@ -17,7 +18,7 @@ const loginAdmin = async (req, res) => {
 
     // Find admin
     const admin = await Admin.findOne({
-      email: email.toLowerCase()
+      email
     });
 
     if (admin && await bcrypt.compare(password, admin.password)) {
@@ -47,7 +48,7 @@ const loginAdmin = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await User.findOne({ email });
 
     if (user && await bcrypt.compare(password, user.password)) {
       if (!user.isVerified) {

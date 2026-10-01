@@ -1,26 +1,26 @@
 const mongoose = require("mongoose");
 
 const connectDB = async () => {
-  const localMongoUri = "mongodb://127.0.0.1:27017/ecommerce-admin";
-  const mongoUri = process.env.MONGO_URI || localMongoUri;
+  const mongoUri = process.env.MONGO_URI;
+  if (!mongoUri) {
+    throw new Error("MONGO_URI must be configured with a MongoDB Atlas connection string");
+  }
+
+  const authority = mongoUri.match(/^mongodb(?:\+srv)?:\/\/([^/?#]+)/i)?.[1];
+  const hosts = authority?.slice(authority.lastIndexOf("@") + 1).split(",") ?? [];
+  const isAtlasUri = hosts.length > 0 && hosts.every((host) =>
+    host.replace(/:\d+$/, "").toLowerCase().endsWith(".mongodb.net")
+  );
+
+  if (!isAtlasUri) {
+    throw new Error("MONGO_URI must use MongoDB Atlas hosts (*.mongodb.net)");
+  }
 
   try {
-    await mongoose.connect(mongoUri);
-    console.log("MongoDB connected successfully");
+    await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 10000 });
+    console.log(`Connected to MongoDB Atlas (${mongoose.connection.name})`);
   } catch (error) {
-    if (mongoUri !== localMongoUri) {
-      try {
-        await mongoose.connect(localMongoUri);
-        console.warn("MongoDB Atlas unavailable; connected to local MongoDB instead.");
-        return;
-      } catch (localError) {
-        console.error("MongoDB connection failed:", localError.message);
-      }
-    } else {
-      console.error("MongoDB connection failed:", error.message);
-    }
-
-    process.exit(1);
+    throw new Error(`Could not connect to MongoDB Atlas: ${error.message}`);
   }
 };
 

@@ -1,10 +1,11 @@
 const dotenv = require("dotenv");
+const path = require("path");
 const bcrypt = require("bcryptjs");
 
 const connectDB = require("./config/db");
 const User = require("./config/models/User");
 
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, ".env") });
 
 const createUser = async () => {
   try {

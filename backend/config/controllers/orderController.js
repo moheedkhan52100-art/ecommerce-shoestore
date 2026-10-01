@@ -10,28 +10,68 @@ const restoreReservedStock = (reservations) => Promise.all(
 
 const createOrder = async (req, res) => {
   try {
-    const { items, total, shipping, paymentMethod } = req.body;
-    if (!Array.isArray(items) || !items.length || !Number.isFinite(Number(total)) || Number(total) < 0) {
-      return res.status(400).json({ message: "Items and total are required" });
+    const { items, shipping, paymentMethod = "cash" } = req.body || {};
+    if (!Array.isArray(items) || !items.length) {
+      return res.status(400).json({ message: "At least one order item is required" });
+    }
+    if (paymentMethod !== "cash") {
+      return res.status(400).json({ message: "Only cash on delivery is currently available" });
+    }
+
+    const shippingFields = ["name", "address", "city", "postalCode"];
+    const normalizedShipping = {};
+    for (const field of shippingFields) {
+      const value = shipping?.[field];
+      if (typeof value !== "string" || !value.trim()) {
+        return res.status(400).json({ message: "Complete all shipping details" });
+      }
+      normalizedShipping[field] = value.trim();
     }
 
     const requestedQuantities = new Map();
+    const requestedItems = [];
     for (const item of items) {
-      const productId = typeof item.product === "object" ? item.product?._id : item.product;
-      const quantity = Number(item.quantity);
-      if (!mongoose.Types.ObjectId.isValid(productId) || !Number.isInteger(quantity) || quantity < 1) {
+      const productIdValue = typeof item?.product === "object" ? item.product?._id : item?.product;
+      const quantity = Number(item?.quantity);
+      const size = typeof item?.size === "string" ? item.size.trim() : "";
+      if (!mongoose.Types.ObjectId.isValid(productIdValue) || !Number.isInteger(quantity) || quantity < 1) {
         return res.status(400).json({ message: "Each order item must have a valid product and quantity" });
       }
+      if (item?.size != null && (typeof item.size !== "string" || size.length > 20)) {
+        return res.status(400).json({ message: "Each order item must have a valid size" });
+      }
+
+      const productId = String(productIdValue);
       requestedQuantities.set(productId, (requestedQuantities.get(productId) || 0) + quantity);
+      requestedItems.push({ productId, quantity, size });
     }
 
     const productIds = [...requestedQuantities.keys()];
-    const products = await Product.find({ _id: { $in: productIds } }).select("name stock");
+    const products = await Product.find({ _id: { $in: productIds } }).select("name stock price image images sizes");
     const productsById = new Map(products.map((product) => [String(product._id), product]));
     const missingProduct = productIds.find((productId) => !productsById.has(productId));
     if (missingProduct) {
       return res.status(404).json({ message: "A product in this order is no longer available" });
     }
+
+    const orderItems = [];
+    for (const item of requestedItems) {
+      const product = productsById.get(item.productId);
+      const price = Number(product.price);
+      if (!Number.isFinite(price) || price < 0) {
+        return res.status(409).json({ message: `${product.name} is currently unavailable` });
+      }
+
+      orderItems.push({
+        product: product._id,
+        name: product.name,
+        image: product.image || product.images?.[0] || "",
+        quantity: item.quantity,
+        price,
+        size: item.size
+      });
+    }
+    const total = Math.round(orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0) * 100) / 100;
 
     const reservations = [];
     try {
@@ -60,7 +100,14 @@ const createOrder = async (req, res) => {
 
     let order;
     try {
-      order = await Order.create({ customer: req.user.id, email: req.user.email, items, total: Number(total), shipping, paymentMethod });
+      order = await Order.create({
+        customer: req.user.id,
+        email: req.user.email,
+        items: orderItems,
+        total,
+        shipping: normalizedShipping,
+        paymentMethod
+      });
     } catch (error) {
       await restoreReservedStock(reservations);
       throw error;
@@ -68,7 +115,7 @@ const createOrder = async (req, res) => {
 
     res.status(201).json(order);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 

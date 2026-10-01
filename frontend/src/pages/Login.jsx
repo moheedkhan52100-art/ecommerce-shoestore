@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Eye, EyeOff } from "lucide-react";
+import { API_BASE_URL } from "../services/api";
 
 function Login() {
   const navigate = useNavigate();
@@ -32,7 +33,7 @@ function Login() {
 
     try {
       if (mode === "verify") {
-        const response = await axios.post("http://localhost:5000/api/user/verify-otp", { email, otp });
+        const response = await axios.post(`${API_BASE_URL}/user/verify-otp`, { email, otp });
         setMode("signin");
         resetAuthForm();
         setMessage(response.data.message || "Email verified successfully! Please sign in.");
@@ -40,13 +41,13 @@ function Login() {
       }
 
       if (mode === "signup") {
-        const response = await axios.post("http://localhost:5000/api/user/register", { name, email, password });
+        const response = await axios.post(`${API_BASE_URL}/user/register`, { name, email, password });
         setMode("verify");
         setMessage(response.data.message || "Verification code sent to your email.");
         return;
       }
 
-      const response = await axios.post("http://localhost:5000/api/auth/login", { email, password });
+      const response = await axios.post(`${API_BASE_URL}/auth/login`, { email, password });
 
       localStorage.setItem("token", response.data.token);
       if (response.data.role === "admin") {
@@ -80,7 +81,7 @@ function Login() {
     setMessage("");
     setLoading(true);
     try {
-      const response = await axios.post("http://localhost:5000/api/user/resend-otp", { email });
+      const response = await axios.post(`${API_BASE_URL}/user/resend-otp`, { email });
       setMessage(response.data.message || "A new verification code has been sent.");
     } catch (resendError) {
       setError(resendError.response?.data?.message || "Unable to resend OTP");

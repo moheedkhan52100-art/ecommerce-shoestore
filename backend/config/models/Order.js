@@ -7,7 +7,7 @@ const orderSchema = new mongoose.Schema(
     items: [{ name: String, image: String, product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" }, quantity: Number, price: Number, size: String }],
     total: { type: Number, required: true },
     shipping: { name: String, address: String, city: String, postalCode: String },
-    paymentMethod: { type: String, enum: ["card", "cash"], default: "cash" },
+    paymentMethod: { type: String, enum: ["cash"], default: "cash" },
     status: { type: String, enum: ["Pending", "Shipped", "Delivered"], default: "Pending" }
   },
   { timestamps: true }

@@ -1,3 +1,5 @@
+import { API_BASE_URL } from "./api";
+
 export const productKey = (product) => `${product._id || product.name || "item"}${product.selectedSize ? `-${product.selectedSize}` : ""}`;
 
 export const readCart = () => JSON.parse(localStorage.getItem("khan-cart") || "[]");
@@ -64,7 +66,7 @@ export const cartTotal = (cart) => groupedCart(cart).reduce(
   0
 );
 
-export const createOrder = (order) => fetch("http://localhost:5000/api/orders", {
+export const createOrder = (order) => fetch(`${API_BASE_URL}/orders`, {
   method: "POST",
   headers: {
     "Content-Type": "application/json",

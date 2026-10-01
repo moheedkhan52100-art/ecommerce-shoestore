@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { API_BASE_URL } from "../services/api";
 
 function UserLogin() {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ function UserLogin() {
     setLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:5000/api/user/login", {
+      const response = await axios.post(`${API_BASE_URL}/user/login`, {
         email,
         password,
       });

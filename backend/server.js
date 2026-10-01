@@ -1,17 +1,12 @@
-require("dotenv").config();
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, ".env") });
 const express = require("express");
 const cors = require("cors");
-const dotenv = require("dotenv");
-const path = require("path");
 const aiRoutes = require("./config/routes/aiRoutes");
-
-dotenv.config();
 
 const connectDB = require("./config/db");
 const authRoutes = require("./config/routes/authRoutes");
 const userAuthRoutes = require("./config/routes/userAuthRoutes");
-
-connectDB();
 
 const app = express();
 
@@ -36,6 +31,16 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/ai", aiRoutes);
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+const startServer = async () => {
+  try {
+    await connectDB();
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error(`Server startup failed: ${error.message}`);
+    process.exit(1);
+  }
+};
+
+startServer();

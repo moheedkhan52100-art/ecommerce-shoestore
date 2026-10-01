@@ -223,15 +223,6 @@ function Shop() {
     searchInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [searchParams]);
 
-  // Auto-rotate videos one by one automatically when in "All" view
-  useEffect(() => {
-    if (audience !== "All") return;
-    const interval = setInterval(() => {
-      setAllVideoIndex((prev) => (prev + 1) % allVideosPlaylist.length);
-    }, 6500);
-    return () => clearInterval(interval);
-  }, [audience]);
-
   const audiences = ["All", "Men", "Women", "Kids", "Jordan", "NikeSKIMS", "Sport", "Sportswear"];
   const categories = ["All", ...new Set(products.map((product) => product.category).filter(Boolean))];
 
@@ -386,7 +377,7 @@ function Shop() {
           muted
           loop={!isAllAudience}
           playsInline
-          preload="auto"
+          preload="metadata"
           onEnded={() => {
             if (isAllAudience) {
               setAllVideoIndex((prev) => (prev + 1) % allVideosPlaylist.length);
