@@ -5,6 +5,11 @@ export const productKey = (product) => `${product._id || product.name || "item"}
 export const readCart = () => JSON.parse(localStorage.getItem("khan-cart") || "[]");
 export const readWishlist = () => JSON.parse(localStorage.getItem("khan-wishlist") || "[]");
 const notifyStoreDataUpdated = () => window.dispatchEvent(new Event("store-data-updated"));
+export const notifyStoreToast = (message) => {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("store-toast", { detail: { message } }));
+  }
+};
 
 export const getProductStockMessage = (cart, product, quantityToAdd = 1) => {
   const stock = Number(product.stock);

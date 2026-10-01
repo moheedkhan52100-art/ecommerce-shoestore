@@ -4396,6 +4396,10 @@ a.header-icon-btn {
   bottom: 24px;
   right: 24px;
   z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(420px, calc(100vw - 32px));
   background: #211b14;
   color: #ffffff;
   padding: 14px 22px;

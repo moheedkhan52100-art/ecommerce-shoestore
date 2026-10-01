@@ -18,6 +18,7 @@ import { ThemeProvider } from "./context/ThemeContext";
 import StoreHeader from "./components/StoreHeader";
 import StoreFooter from "./components/StoreFooter";
 import SupportChat from "./components/SupportChat";
+import StoreToast from "./components/StoreToast";
 
 function StorefrontLayout({ children, shopNavigation = false }) {
   return (
@@ -51,6 +52,7 @@ function App() {
   return (
     <ThemeProvider>
       <BrowserRouter>
+        <StoreToast />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/user/login" element={<Login />} />

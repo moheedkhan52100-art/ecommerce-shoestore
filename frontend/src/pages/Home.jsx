@@ -7,7 +7,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/effect-fade";
 import { getProducts } from "../services/productService";
-import { addProductWithinStock, getCartStockMessage, writeCart, writeWishlist } from "../services/storeService";
+import { addProductWithinStock, getCartStockMessage, notifyStoreToast, writeCart, writeWishlist } from "../services/storeService";
 import ThemeToggle from "../components/ThemeToggle";
 import StoreFooter from "../components/StoreFooter";
 
@@ -123,11 +123,13 @@ function Home() {
   const activeSlide = homeHeroSlides[slideIndex];
 
   const toggleWishlist = (product) => {
-    const nextWishlist = wishlist.some((item) => productKey(item) === productKey(product))
+    const isSaved = wishlist.some((item) => productKey(item) === productKey(product));
+    const nextWishlist = isSaved
       ? wishlist.filter((item) => productKey(item) !== productKey(product))
       : [...wishlist, product];
     setWishlist(nextWishlist);
     writeWishlist(nextWishlist);
+    notifyStoreToast(isSaved ? `Removed ${product.name} from your wishlist.` : `Added ${product.name} to your wishlist.`);
   };
 
   const addToCart = (product) => {

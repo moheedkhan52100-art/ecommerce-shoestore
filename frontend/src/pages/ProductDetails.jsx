@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Heart, RotateCw, ShoppingBag, Star } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { getProduct, getProducts } from "../services/productService";
-import { addProductWithinStock, readCart, readWishlist, writeCart, writeWishlist } from "../services/storeService";
+import { addProductWithinStock, notifyStoreToast, readCart, readWishlist, writeCart, writeWishlist } from "../services/storeService";
 import ShoeModel from "../components/ShoeModel";
 
 const fallbackImage = "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1200&q=85";
@@ -137,6 +137,7 @@ function ProductDetails() {
     const nextWishlist = exists ? wishlist.filter((item) => item._id !== product._id) : [...wishlist, product];
     writeWishlist(nextWishlist);
     setSaved(!exists);
+    notifyStoreToast(exists ? `Removed ${product.name} from your wishlist.` : `Added ${product.name} to your wishlist.`);
   };
 
   return (

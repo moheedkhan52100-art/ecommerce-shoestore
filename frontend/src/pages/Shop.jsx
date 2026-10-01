@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { getProducts } from "../services/productService";
-import { addProductWithinStock, productKey, readWishlist, writeCart, writeWishlist } from "../services/storeService";
+import { addProductWithinStock, notifyStoreToast, productKey, readWishlist, writeCart, writeWishlist } from "../services/storeService";
 
 const fallbackImage =
   "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=85";
@@ -321,11 +321,13 @@ function Shop() {
       : sportswearProducts.slice(0, 4);
 
   const toggleWishlist = (product) => {
-    const next = wishlist.some((item) => productKey(item) === productKey(product))
+    const isSaved = wishlist.some((item) => productKey(item) === productKey(product));
+    const next = isSaved
       ? wishlist.filter((item) => productKey(item) !== productKey(product))
       : [...wishlist, product];
     setWishlist(next);
     writeWishlist(next);
+    notifyStoreToast(isSaved ? `Removed ${product.name} from your wishlist.` : `Added ${product.name} to your wishlist.`);
   };
 
   const addToBag = (product) => {
