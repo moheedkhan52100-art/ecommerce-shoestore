@@ -8,11 +8,13 @@ import { getAdminOrders } from "../services/adminService";
 import ProductModal from "../components/ProductModal";
 import ActivityLogs from "../components/ActivityLogs";
 import AdminHeader from "../components/AdminHeader";
+import { useStoreSettings } from "../context/storeSettings";
 
 const defaultShoeImage =
   "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1200&q=80";
 
 function Dashboard() {
+  const { formatCurrency } = useStoreSettings();
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -53,8 +55,6 @@ function Dashboard() {
   }));
   const totalRevenue = revenueData.reduce((total, entry) => total + entry.revenue, 0);
   const pendingOrderCount = orders.filter((order) => order.status === "Pending").length;
-  const formatCurrency = (amount) =>
-    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
 
   return (
     <div className="reference-content-wrap">
@@ -257,7 +257,7 @@ function Dashboard() {
                 <div className="featured-mini-copy">
                   <strong className="text-truncate">{product.name}</strong>
                   <span>
-                    ${Number(product.price).toFixed(2)} · {product.category || "General"}
+                    {formatCurrency(product.price)} · {product.category || "General"}
                   </span>
                 </div>
               </article>

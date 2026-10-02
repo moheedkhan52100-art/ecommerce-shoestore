@@ -21,6 +21,8 @@ export const getAdminOrders = () => axios.get(`${API_URL}/orders`, authConfig())
 export const updateOrderStatus = (id, status) =>
   axios.patch(`${API_URL}/orders/${id}/status`, { status }, authConfig());
 export const getCategories = () => axios.get(`${API_URL}/categories`, authConfig());
+export const getStoreSettings = () => axios.get(`${API_URL}/settings`, authConfig());
+export const updateStoreSettings = (settings) => axios.put(`${API_URL}/settings`, settings, authConfig());
 export const createCategory = (name) =>
   axios.post(`${API_URL}/categories`, { name }, authConfig());
 export const deleteCategory = (id) =>

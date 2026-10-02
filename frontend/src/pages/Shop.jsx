@@ -7,9 +7,11 @@ import {
   SlidersHorizontal,
   ShoppingBag
 } from "lucide-react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { getProducts } from "../services/productService";
-import { addProductWithinStock, notifyStoreToast, productKey, readWishlist, writeCart, writeWishlist } from "../services/storeService";
+import { notifyStoreToast, productKey, readWishlist, writeWishlist } from "../services/storeService";
+import { getCategories } from "../services/adminService";
+import { useStoreSettings } from "../context/storeSettings";
 
 const fallbackImage =
   "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=85";
@@ -178,9 +180,12 @@ const isSportswearItem = (product) => {
 };
 
 function Shop() {
+  const { formatCurrency } = useStoreSettings();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const searchInputRef = useRef(null);
   const [products, setProducts] = useState([]);
+  const [catalogCategories, setCatalogCategories] = useState([]);
   const [query, setQuery] = useState(() => searchParams.get("q") || "");
   const [category, setCategory] = useState("All");
   const [maxPrice, setMaxPrice] = useState("500");
@@ -192,7 +197,6 @@ function Shop() {
   const [inStockOnly, setInStockOnly] = useState(false);
   const [wishlist, setWishlist] = useState(readWishlist);
   const [sortBy, setSortBy] = useState("featured");
-  const [toastMessage, setToastMessage] = useState("");
 
   // Playlist index for rotating all videos
   const [allVideoIndex, setAllVideoIndex] = useState(0);
@@ -215,6 +219,14 @@ function Shop() {
     };
   }, []);
 
+  useEffect(() => {
+    const loadCategories = () => getCategories().then(({ data }) => setCatalogCategories(data.map((item) => item.name))).catch(() => setCatalogCategories([]));
+    loadCategories();
+    window.addEventListener("focus", loadCategories);
+    const refreshTimer = window.setInterval(loadCategories, 5000);
+    return () => { window.removeEventListener("focus", loadCategories); window.clearInterval(refreshTimer); };
+  }, []);
+
   const audience = searchParams.get("audience") || "All";
 
   useEffect(() => {
@@ -224,7 +236,7 @@ function Shop() {
   }, [searchParams]);
 
   const audiences = ["All", "Men", "Women", "Kids", "Jordan", "NikeSKIMS", "Sport", "Sportswear"];
-  const categories = ["All", ...new Set(products.map((product) => product.category).filter(Boolean))];
+  const categories = ["All", ...new Set([...catalogCategories, ...products.map((product) => product.category).filter(Boolean)])];
 
   // Video config for current section
   const isAllAudience = audience === "All";
@@ -330,18 +342,7 @@ function Shop() {
     notifyStoreToast(isSaved ? `Removed ${product.name} from your wishlist.` : `Added ${product.name} to your wishlist.`);
   };
 
-  const addToBag = (product) => {
-    const existingCart = JSON.parse(localStorage.getItem("khan-cart") || "[]");
-    const result = addProductWithinStock(existingCart, product);
-    if (result.message) {
-      setToastMessage(result.message);
-      setTimeout(() => setToastMessage(""), 3500);
-      return;
-    }
-    writeCart(result.cart);
-    setToastMessage(`Added "${product.name}" to your bag!`);
-    setTimeout(() => setToastMessage(""), 3500);
-  };
+  const openProductDetails = (product) => navigate(`/product/${product._id}`);
 
   const resetFilters = () => {
     setQuery("");
@@ -365,7 +366,6 @@ function Shop() {
 
   return (
     <main className="shop-page">
-      {toastMessage && <div className="shop-toast-banner">{toastMessage}</div>}
 
       {/* ========================================================
           BACKGROUND VIDEO ANIMATION HERO BANNER
@@ -445,9 +445,9 @@ function Shop() {
         <label>
           <span>Max price</span>
           <select value={maxPrice} onChange={(event) => setMaxPrice(event.target.value)}>
-            <option value="150">$150</option>
-            <option value="300">$300</option>
-            <option value="500">$500</option>
+            <option value="150">{formatCurrency(150)}</option>
+            <option value="300">{formatCurrency(300)}</option>
+            <option value="500">{formatCurrency(500)}</option>
             <option value="10000">Any price</option>
           </select>
         </label>
@@ -591,15 +591,14 @@ function Shop() {
                     {Number(product.stock) > 0 ? `${product.stock} in stock` : "Sold out"}
                   </span>
                 </div>
-                <strong>${Number(product.price).toFixed(2)}</strong>
+                <strong>{formatCurrency(product.price)}</strong>
               </div>
 
               <div className="shop-card-actions-bar">
                 <button
                   type="button"
                   className="shop-quick-bag-btn"
-                  onClick={() => addToBag(product)}
-                  disabled={Number(product.stock) <= 0}
+                  onClick={() => openProductDetails(product)}
                 >
                   <ShoppingBag size={14} />
                   <span>Add to Bag</span>
@@ -684,11 +683,11 @@ function Shop() {
                       <Link to={`/product/${shoe._id}`}>{shoe.name}</Link>
                     </h4>
                     <div className="suggestion-price-row">
-                      <strong>${Number(shoe.price).toFixed(2)}</strong>
+                      <strong>{formatCurrency(shoe.price)}</strong>
                       <button
                         type="button"
                         className="suggestion-add-btn"
-                        onClick={() => addToBag(shoe)}
+                        onClick={() => openProductDetails(shoe)}
                         title="Add to Bag"
                       >
                         + Bag
@@ -762,11 +761,11 @@ function Shop() {
                       <Link to={`/product/${apparel._id}`}>{apparel.name}</Link>
                     </h4>
                     <div className="suggestion-price-row">
-                      <strong>${Number(apparel.price).toFixed(2)}</strong>
+                      <strong>{formatCurrency(apparel.price)}</strong>
                       <button
                         type="button"
                         className="suggestion-add-btn"
-                        onClick={() => addToBag(apparel)}
+                        onClick={() => openProductDetails(apparel)}
                         title="Add to Bag"
                       >
                         + Bag

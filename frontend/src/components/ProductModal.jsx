@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, UploadCloud, Check, Plus, AlertCircle, Loader2 } from "lucide-react";
 import { createProduct, getProduct, updateProduct } from "../services/productService";
-import { notifyAdminActivityChanged } from "../services/adminService";
+import { getCategories as fetchCategories, notifyAdminActivityChanged } from "../services/adminService";
+import { useStoreSettings } from "../context/storeSettings";
 
 const initialForm = {
   name: "",
@@ -21,6 +22,7 @@ const initialForm = {
 };
 
 function ProductModal({ isOpen, onClose, mode = "add", productId = null, onSuccess }) {
+  const { settings } = useStoreSettings();
   const isEdit = mode === "edit";
 
   const [form, setForm] = useState(initialForm);
@@ -33,6 +35,12 @@ function ProductModal({ isOpen, onClose, mode = "add", productId = null, onSucce
   const [modelFile, setModelFile] = useState(null);
   const [sizes, setSizes] = useState([]);
   const [sizeInput, setSizeInput] = useState("");
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    fetchCategories().then(({ data }) => setCategories(data.map((item) => item.name))).catch(() => setCategories([]));
+  }, [isOpen]);
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -266,7 +274,7 @@ function ProductModal({ isOpen, onClose, mode = "add", productId = null, onSucce
                   </label>
 
                   <label>
-                    <span>Price ($ USD) *</span>
+                    <span>Price ({settings.currency}) *</span>
                     <input
                       name="price"
                       type="number"
@@ -294,13 +302,15 @@ function ProductModal({ isOpen, onClose, mode = "add", productId = null, onSucce
 
                   <label>
                     <span>Category *</span>
-                    <input
+                    <select
                       name="category"
                       value={form.category}
                       onChange={handleChange}
-                      placeholder="Sneakers, Lifestyle, Running..."
                       required
-                    />
+                    >
+                      <option value="" disabled>Select a category</option>
+                      {[...new Set([...categories, ...(form.category && !categories.includes(form.category) ? [form.category] : [])])].map((category) => <option key={category} value={category}>{category}</option>)}
+                    </select>
                   </label>
 
                   <label>

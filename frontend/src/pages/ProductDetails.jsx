@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { getProduct, getProducts } from "../services/productService";
 import { addProductWithinStock, notifyStoreToast, readCart, readWishlist, writeCart, writeWishlist } from "../services/storeService";
 import ShoeModel from "../components/ShoeModel";
+import { useStoreSettings } from "../context/storeSettings";
 
 const fallbackImage = "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1200&q=85";
 const defaultShoeSizes = ["36", "37", "38", "39", "40", "41", "42"];
@@ -19,6 +20,7 @@ const sportswearSizeChart = [
 ];
 
 function ProductDetails() {
+  const { formatCurrency } = useStoreSettings();
   const { id } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
@@ -40,6 +42,7 @@ function ProductDetails() {
     const loadProduct = () => getProduct(id)
       .then((response) => {
         setProduct(response.data);
+        setSelectedSize((current) => response.data.sizes?.includes(current) ? current : "");
         setSelectedImage(response.data.image || response.data.images?.[0] || "");
         // Ensure media mode is image if sportswear
         const isSportswear = response.data?.audience === "Sportswear" ||
@@ -101,7 +104,7 @@ function ProductDetails() {
     product.category?.toLowerCase() === "sportswear" ||
     Boolean(product.sportswearType);
 
-  const availableSizes = product.sizes?.length
+  const availableSizes = Array.isArray(product.sizes)
     ? product.sizes
     : (isSportswear ? defaultSportswearSizes : defaultShoeSizes);
   const productImages = [...new Set([product.image, ...(product.images || [])].filter(Boolean))];
@@ -207,7 +210,7 @@ function ProductDetails() {
         <div className="product-details-copy">
           <p className="eyebrow">{isSportswear ? "Khan Sportswear" : "Khan collection"}</p>
           <h1>{product.name}</h1>
-          <strong className="product-details-price">${product.price}</strong>
+          <strong className="product-details-price">{formatCurrency(product.price)}</strong>
           <p className="product-details-description">{product.description || (isSportswear ? "Engineered for movement, performance, and everyday athletic comfort." : "A considered Khan essential, made for everyday movement.")}</p>
           
           <div className="size-selector">
@@ -228,6 +231,7 @@ function ProductDetails() {
                 </button>
               ))}
             </div>
+            {!availableSizes.length && <p className="form-error">No sizes are currently available for this product.</p>}
             {isSportswear && (
               <div className="sportswear-size-guide-toggle">
                 <button
@@ -307,7 +311,7 @@ function ProductDetails() {
                     <h3><Link to={`/product/${item._id}`}>{item.name}</Link></h3>
                     <p>{item.category || "Khan collection"}</p>
                   </div>
-                  <strong>${Number(item.price || 0).toFixed(2)}</strong>
+                  <strong>{formatCurrency(item.price || 0)}</strong>
                 </div>
               </article>
             ))}

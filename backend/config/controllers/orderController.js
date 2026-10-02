@@ -14,8 +14,8 @@ const createOrder = async (req, res) => {
     if (!Array.isArray(items) || !items.length) {
       return res.status(400).json({ message: "At least one order item is required" });
     }
-    if (paymentMethod !== "cash") {
-      return res.status(400).json({ message: "Only cash on delivery is currently available" });
+    if (!["cash", "card"].includes(paymentMethod)) {
+      return res.status(400).json({ message: "Select a supported payment method" });
     }
 
     const shippingFields = ["name", "address", "city", "postalCode"];
@@ -57,6 +57,9 @@ const createOrder = async (req, res) => {
     const orderItems = [];
     for (const item of requestedItems) {
       const product = productsById.get(item.productId);
+      if (item.size && !product.sizes.includes(item.size)) {
+        return res.status(409).json({ message: `${item.size} is no longer available for ${product.name}` });
+      }
       const price = Number(product.price);
       if (!Number.isFinite(price) || price < 0) {
         return res.status(409).json({ message: `${product.name} is currently unavailable` });

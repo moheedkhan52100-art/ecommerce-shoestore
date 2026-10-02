@@ -11,7 +11,9 @@ const productPayload = (product) => {
   if (!product.imageFile && !product.modelFile) return product;
   const payload = new FormData();
   Object.entries(product).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && key !== "imageFile" && key !== "modelFile") payload.append(key, value);
+    if (value !== undefined && value !== null && key !== "imageFile" && key !== "modelFile") {
+      payload.append(key, Array.isArray(value) ? JSON.stringify(value) : value);
+    }
   });
   if (product.imageFile) payload.append("imageFile", product.imageFile);
   (product.imageFiles || []).forEach((file) => payload.append("imageFiles", file));

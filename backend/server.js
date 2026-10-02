@@ -24,10 +24,12 @@ app.get("/", (req, res) => {
 const productRoutes = require("./config/routes/productRoutes");
 const adminRoutes = require("./config/routes/adminRoutes");
 const orderRoutes = require("./config/routes/orderRoutes");
+const storeRoutes = require("./config/routes/storeRoutes");
 
 app.use("/api/products", productRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/store", storeRoutes);
 app.use("/api/ai", aiRoutes);
 const PORT = process.env.PORT || 5000;
 

@@ -8,6 +8,51 @@ const getGmailConfig = () => ({
     .replace(/\s/g, "")
 });
 
+const sendOrderStatusEmail = async (order, previousStatus) => {
+  const { user, pass } = getGmailConfig();
+  if (!user || !pass || !order?.email) {
+    console.warn("Order status email not sent because recipient or Gmail credentials are missing.");
+    return { info: null, skipped: true };
+  }
+
+  const orderNumber = String(order._id).slice(-6).toUpperCase();
+  const customerName = String(order.shipping?.name || "Customer");
+  const escapeHtml = (value) => value.replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[character]);
+  try {
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user, pass }
+    });
+    const info = await transporter.sendMail({
+      from: `"Khan Store" <${user}>`,
+      to: order.email,
+      subject: `Order #${orderNumber} status update`,
+      text: `Hello ${customerName}, your order #${orderNumber} status changed from ${previousStatus || "Unknown"} to ${order.status}.`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 24px; color: #211b14;">
+          <h2>Order status update</h2>
+          <p>Hello ${escapeHtml(customerName)},</p>
+          <p>The status of your order <strong>#${orderNumber}</strong> has changed.</p>
+          <p>Previous status: ${escapeHtml(String(previousStatus || "Unknown"))}</p>
+          <p>Current status: <strong>${escapeHtml(String(order.status))}</strong></p>
+          <p>Thank you for shopping with Khan Store.</p>
+        </div>
+      `
+    });
+    console.log(`[ORDER STATUS] Email sent successfully to ${order.email}`);
+    return { info, skipped: false };
+  } catch (error) {
+    console.warn(`[ORDER STATUS] Failed to email ${order.email}: ${error.message}`);
+    return { info: null, skipped: true, error: error.message };
+  }
+};
+
 const sendOtpEmail = async (email, otp) => {
   const { user, pass } = getGmailConfig();
 
@@ -63,5 +108,6 @@ const sendOtpEmail = async (email, otp) => {
 };
 
 module.exports = {
-  sendOtpEmail
+  sendOtpEmail,
+  sendOrderStatusEmail
 };

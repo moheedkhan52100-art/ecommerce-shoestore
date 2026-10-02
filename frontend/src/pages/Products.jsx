@@ -12,11 +12,13 @@ import { createProduct, deleteProduct, getProducts } from "../services/productSe
 import { createAdminLog } from "../services/adminService";
 import ProductModal from "../components/ProductModal";
 import AdminHeader from "../components/AdminHeader";
+import { useStoreSettings } from "../context/storeSettings";
 
 const defaultShoeImage =
   "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1200&q=80";
 
 function Products({ initialModal = null }) {
+  const { formatCurrency } = useStoreSettings();
   const { id: paramId } = useParams();
   const location = useLocation();
 
@@ -340,7 +342,7 @@ function Products({ initialModal = null }) {
                         </td>
                       <td>
                         <strong className="product-table-price">
-                          ${Number(product.price).toFixed(2)}
+                          {formatCurrency(product.price)}
                         </strong>
                       </td>
                       <td>

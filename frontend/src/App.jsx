@@ -19,6 +19,7 @@ import StoreHeader from "./components/StoreHeader";
 import StoreFooter from "./components/StoreFooter";
 import SupportChat from "./components/SupportChat";
 import StoreToast from "./components/StoreToast";
+import { StoreSettingsProvider } from "./context/StoreSettingsContext";
 
 function StorefrontLayout({ children, shopNavigation = false }) {
   return (
@@ -51,6 +52,7 @@ function UserRoute({ children }) {
 function App() {
   return (
     <ThemeProvider>
+      <StoreSettingsProvider>
       <BrowserRouter>
         <StoreToast />
         <Routes>
@@ -124,6 +126,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
+      </StoreSettingsProvider>
     </ThemeProvider>
   );
 }

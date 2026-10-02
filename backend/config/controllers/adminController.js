@@ -2,7 +2,9 @@ const Category = require("../models/Category");
 const Order = require("../models/Order");
 const User = require("../models/User");
 const AdminLog = require("../models/AdminLog");
+const StoreSettings = require("../models/StoreSettings");
 const { logAdminAction } = require("../utils/logger");
+const emailService = require("../services/emailService");
 
 const listUsers = async (req, res) => {
   const users = await User.find().select("name email blocked createdAt").sort({ createdAt: -1 });
@@ -39,7 +41,7 @@ const listOrders = async (req, res) => {
 };
 
 const setOrderStatus = async (req, res) => {
-  const allowed = ["Pending", "Shipped", "Delivered"];
+  const allowed = ["Pending", "Shipped", "Delivered", "Paid"];
   if (!allowed.includes(req.body.status)) return res.status(400).json({ message: "Invalid order status" });
   const previousOrder = await Order.findById(req.params.id);
   const order = await Order.findByIdAndUpdate(
@@ -50,6 +52,10 @@ const setOrderStatus = async (req, res) => {
     .populate("customer", "name email")
     .populate("items.product", "name image images");
   if (!order) return res.status(404).json({ message: "Order not found" });
+
+  if (previousOrder?.status !== order.status) {
+    await emailService.sendOrderStatusEmail(order, previousOrder?.status);
+  }
 
   await logAdminAction({
     adminEmail: req.admin?.email || "Admin",
@@ -70,6 +76,24 @@ const setOrderStatus = async (req, res) => {
 };
 
 const listCategories = async (req, res) => res.json(await Category.find().sort({ name: 1 }));
+
+const getStoreSettings = async (req, res) => {
+  let settings = await StoreSettings.findOne();
+  if (!settings) settings = await StoreSettings.create({});
+  res.json(settings);
+};
+
+const updateStoreSettings = async (req, res) => {
+  const allowed = ["USD", "EUR", "GBP"];
+  if (req.body.currency && !allowed.includes(req.body.currency)) return res.status(400).json({ message: "Unsupported currency" });
+  const settings = await StoreSettings.findOneAndUpdate({}, {
+    ...(req.body.currency ? { currency: req.body.currency } : {}),
+    ...(typeof req.body.storeName === "string" ? { storeName: req.body.storeName } : {}),
+    ...(typeof req.body.supportEmail === "string" ? { supportEmail: req.body.supportEmail } : {}),
+    ...(typeof req.body.fulfillmentSla === "string" ? { fulfillmentSla: req.body.fulfillmentSla } : {})
+  }, { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true });
+  res.json(settings);
+};
 
 const createCategory = async (req, res) => {
   const category = await Category.create({ name: req.body.name });
@@ -204,6 +228,8 @@ module.exports = {
   listOrders,
   setOrderStatus,
   listCategories,
+  getStoreSettings,
+  updateStoreSettings,
   createCategory,
   updateCategory,
   deleteCategory,

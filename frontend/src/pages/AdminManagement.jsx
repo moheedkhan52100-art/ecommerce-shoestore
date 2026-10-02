@@ -19,15 +19,18 @@ import {
   getAdminUsers,
   getCategories,
   updateOrderStatus,
+  updateStoreSettings,
   updateUserBlocked
 } from "../services/adminService";
 import ActivityLogs from "../components/ActivityLogs";
 import AdminHeader from "../components/AdminHeader";
+import { useStoreSettings } from "../context/storeSettings";
 
 const defaultShoeImage =
   "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=600&q=80";
 
 function AdminManagement() {
+  const { settings, applySettings, formatCurrency } = useStoreSettings();
   const [searchParams] = useSearchParams();
   const validTabs = ["orders", "users", "categories", "logs", "settings"];
   const currentTab = searchParams.get("tab");
@@ -39,12 +42,18 @@ function AdminManagement() {
   const [newCategory, setNewCategory] = useState("");
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [currencyDraft, setCurrencyDraft] = useState(null);
+  const currency = currencyDraft ?? settings.currency;
 
   // Orders UI state
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [orderSearch, setOrderSearch] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [statusDraft, setStatusDraft] = useState(null);
+  const selectedStatus = statusDraft && selectedOrder && statusDraft.orderId === selectedOrder._id
+    ? statusDraft.status
+    : selectedOrder?.status || "Pending";
 
   useEffect(() => {
     let active = true;
@@ -67,6 +76,18 @@ function AdminManagement() {
     };
   }, []);
 
+  const saveSettings = async () => {
+    try {
+      const { data } = await updateStoreSettings({ currency });
+      applySettings(data);
+      setCurrencyDraft(null);
+      setSuccessMessage("Settings saved successfully.");
+      setTimeout(() => setSuccessMessage(""), 3500);
+    } catch (saveError) {
+      setError(saveError.response?.data?.message || "Unable to save settings.");
+    }
+  };
+
   const changeStatus = async (id, status) => {
     try {
       const response = await updateOrderStatus(id, status);
@@ -76,6 +97,7 @@ function AdminManagement() {
       if (selectedOrder && selectedOrder._id === id) {
         setSelectedOrder(response.data);
       }
+      setStatusDraft((current) => current?.orderId === id ? null : current);
       setSuccessMessage(`Order status updated to "${status}".`);
       setTimeout(() => setSuccessMessage(""), 3500);
     } catch (actionError) {
@@ -303,7 +325,7 @@ function AdminManagement() {
                             </span>
                           </td>
                           <td className="col-total">
-                            <strong>${Number(order.total || 0).toFixed(2)}</strong>
+                            <strong>{formatCurrency(order.total || 0)}</strong>
                           </td>
                           <td className="col-date">
                             <span>{formatDateShort(order.createdAt)}</span>
@@ -404,7 +426,7 @@ function AdminManagement() {
                           <strong>{item.name || item.product?.name || `Item #${idx + 1}`}</strong>
                           <span>
                             {item.quantity ? `${item.quantity}x ` : ""}
-                            ${Number(item.price || 0).toFixed(2)}
+                            {formatCurrency(item.price || 0)}
                             {item.size ? ` · Size ${item.size}` : ""}
                           </span>
                         </div>
@@ -415,7 +437,7 @@ function AdminManagement() {
                       <img src={defaultShoeImage} alt="Product package" />
                       <div className="inspector-item-info">
                         <strong>Standard Store Package</strong>
-                        <span>1x ${Number(selectedOrder.total || 0).toFixed(2)}</span>
+                        <span>1x {formatCurrency(selectedOrder.total || 0)}</span>
                       </div>
                     </div>
                   )}
@@ -426,14 +448,15 @@ function AdminManagement() {
               <div className="inspector-footer">
                 <div className="inspector-total-row">
                   <span>Total</span>
-                  <strong>${Number(selectedOrder.total || 0).toFixed(2)}</strong>
+                  <strong>{formatCurrency(selectedOrder.total || 0)}</strong>
                 </div>
 
                 <div className="inspector-actions-row">
                   <select
                     className="inspector-status-select"
-                    value={selectedOrder.status}
-                    onChange={(e) => changeStatus(selectedOrder._id, e.target.value)}
+                    aria-label="Order status"
+                    value={selectedStatus}
+                    onChange={(event) => setStatusDraft({ orderId: selectedOrder._id, status: event.target.value })}
                   >
                     <option value="Pending">Status: Pending</option>
                     <option value="Shipped">Status: Shipped</option>
@@ -444,17 +467,10 @@ function AdminManagement() {
                   <button
                     type="button"
                     className="inspector-action-btn primary"
-                    onClick={() => {
-                      const next =
-                        selectedOrder.status === "Pending"
-                          ? "Shipped"
-                          : selectedOrder.status === "Shipped"
-                          ? "Delivered"
-                          : "Paid";
-                      changeStatus(selectedOrder._id, next);
-                    }}
+                    disabled={!statusDraft || statusDraft.orderId !== selectedOrder._id || statusDraft.status === selectedOrder.status}
+                    onClick={() => changeStatus(selectedOrder._id, statusDraft.status)}
                   >
-                    Update → {selectedOrder.status === "Pending" ? "Shipped" : "Delivered"}
+                    {statusDraft?.orderId === selectedOrder._id ? `Update → ${statusDraft.status}` : "Choose a status"}
                   </button>
                 </div>
               </div>
@@ -620,7 +636,7 @@ function AdminManagement() {
 
               <label>
                 <span>Currency Display</span>
-                <select defaultValue="USD">
+                <select value={currency} onChange={(event) => setCurrencyDraft(event.target.value)}>
                   <option value="USD">USD ($)</option>
                   <option value="EUR">EUR (€)</option>
                   <option value="GBP">GBP (£)</option>
@@ -637,10 +653,7 @@ function AdminManagement() {
               <button
                 type="button"
                 className="primary-button"
-                onClick={() => {
-                  setSuccessMessage("Settings saved successfully.");
-                  setTimeout(() => setSuccessMessage(""), 3500);
-                }}
+                onClick={saveSettings}
               >
                 Save Changes
               </button>

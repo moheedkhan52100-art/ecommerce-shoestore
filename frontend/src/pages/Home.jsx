@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, CreditCard, Heart, Search, ShoppingBag, Trash2, UserRound, X } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Autoplay, EffectFade } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
@@ -10,6 +10,7 @@ import { getProducts } from "../services/productService";
 import { addProductWithinStock, getCartStockMessage, notifyStoreToast, writeCart, writeWishlist } from "../services/storeService";
 import ThemeToggle from "../components/ThemeToggle";
 import StoreFooter from "../components/StoreFooter";
+import { useStoreSettings } from "../context/storeSettings";
 
 const homeHeroSlides = [
   {
@@ -37,7 +38,9 @@ const fallbackImage = "https://images.unsplash.com/photo-1542291026-7eec264c27ff
 const productKey = (product) => product._id || product.name;
 
 function Home() {
+  const { formatCurrency } = useStoreSettings();
   const location = useLocation();
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [searchOpen, setSearchOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -133,6 +136,12 @@ function Home() {
   };
 
   const addToCart = (product) => {
+    if (!product?._id) return;
+    setSearchOpen(false);
+    navigate(`/product/${product._id}`);
+  };
+
+  const addToCartDirectly = (product) => {
     const result = addProductWithinStock(cart, product);
     if (result.message) {
       setCartNotice(result.message);
@@ -254,7 +263,7 @@ function Home() {
                 <Link className="search-result-item" to={`/product/${product._id}`} key={productKey(product)} onClick={() => setSearchOpen(false)}>
                   <img src={product.image || fallbackImage} alt={product.name} />
                   <div><strong>{product.name}</strong><span>{product.category || "Khan collection"} · {product.color || "Signature color"} · {product.stock ?? 0} in stock</span></div>
-                  <b>{product.price ? `$${product.price}` : "View"}</b>
+                  <b>{product.price ? formatCurrency(product.price) : "View"}</b>
                 </Link>
               )) : <p className="search-result-empty">No shoes found for “{query}”.</p>}
             </div>
@@ -458,7 +467,7 @@ function Home() {
             <p>Our current favorites, selected for movement, texture, and the rhythm of everyday life.</p>
           </motion.div>
           <Swiper className="featured-carousel-swiper" modules={[Autoplay, EffectFade]} effect="fade" loop autoplay={{ delay: 4800, disableOnInteraction: false }}>
-            {featuredProducts.map((product) => <SwiperSlide key={productKey(product)}><Link className="featured-carousel-card" to={`/product/${product._id}`}><img className="featured-card-image" src={product.images?.[1] || product.image || fallbackImage} alt={product.name} /><div><span>{product.category || "Khan collection"}</span><strong>{product.name}</strong><b>${product.price}</b></div></Link></SwiperSlide>)}
+            {featuredProducts.map((product) => <SwiperSlide key={productKey(product)}><Link className="featured-carousel-card" to={`/product/${product._id}`}><img className="featured-card-image" src={product.images?.[1] || product.image || fallbackImage} alt={product.name} /><div><span>{product.category || "Khan collection"}</span><strong>{product.name}</strong><b>{formatCurrency(product.price)}</b></div></Link></SwiperSlide>)}
           </Swiper>
         </section>
       )}
@@ -490,7 +499,7 @@ function Home() {
                   <h3>{product.name}</h3>
                   <p>{product.category || "Khan collection"} · {product.color || "Signature color"} · {product.stock ?? 0} in stock</p>
                 </Link>
-                {product.price && <strong>${product.price}</strong>}
+                {product.price && <strong>{formatCurrency(product.price)}</strong>}
               </div>
               {product.price && <button className="add-bag-button" type="button" onClick={() => addToCart(product)}>Add to bag</button>}
             </motion.article>
@@ -528,10 +537,10 @@ function Home() {
               return (
               <div className="drawer-item" key={`${product._id || product.name}-${index}`}>
                 <img src={product.image || fallbackImage} alt={product.name} />
-                <div><strong>{product.name}</strong><span>{product.price ? `$${product.price}` : "Khan collection"}</span><small>{panel === "cart" ? `${quantity} in your bag` : "Saved to wishlist"}</small></div>
+                <div><strong>{product.name}</strong><span>{product.price ? formatCurrency(product.price) : "Khan collection"}</span><small>{panel === "cart" ? `${quantity} in your bag` : "Saved to wishlist"}</small></div>
                 <div className="drawer-item-actions">
                   {panel === "cart" && <div className="quantity-controls"><button type="button" onClick={() => changeCartQuantity(product, -1)}>-</button><span>{quantity}</span><button type="button" onClick={() => changeCartQuantity(product, 1)}>+</button></div>}
-                  {panel === "wishlist" && <button className="move-to-bag-button" type="button" onClick={() => { if (addToCart(product)) removeFromWishlist(product); }}>Move to bag</button>}
+                  {panel === "wishlist" && <button className="move-to-bag-button" type="button" onClick={() => { if (addToCartDirectly(product)) removeFromWishlist(product); }}>Move to bag</button>}
                   <button className="drawer-remove" type="button" aria-label={`Remove ${product.name}`} onClick={() => panel === "cart" ? removeFromCart(cart.findIndex((cartProduct) => productKey(cartProduct) === productKey(product))) : removeFromWishlist(product)}><Trash2 size={16} /></button>
                 </div>
               </div>
@@ -540,7 +549,7 @@ function Home() {
 
             {panel === "cart" && cart.length > 0 && (
               <form className="checkout-form" onSubmit={placeOrder}>
-                <div className="checkout-total"><span>Total</span><strong>${cartItems.reduce((total, item) => total + Number(item.product.price || 0) * item.quantity, 0).toFixed(2)}</strong></div>
+                <div className="checkout-total"><span>Total</span><strong>{formatCurrency(cartItems.reduce((total, item) => total + Number(item.product.price || 0) * item.quantity, 0))}</strong></div>
                 <p className="checkout-label">Payment method</p>
                 <label className="payment-option">
                   <input type="radio" name="payment" value="cash" checked={paymentMethod === "cash"} onChange={() => setPaymentMethod("cash")} />

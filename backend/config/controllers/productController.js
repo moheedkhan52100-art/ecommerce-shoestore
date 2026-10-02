@@ -4,12 +4,21 @@ const { logAdminAction } = require("../utils/logger");
 const uploadedFileUrl = (req, file) => file ? `${req.protocol}://${req.get("host")}/uploads/${file.filename}` : undefined;
 const uploadedImageUrls = (req) => (req.files?.imageFiles || []).map((file) => uploadedFileUrl(req, file));
 
-const productPayload = (req) => ({
-  ...req.body,
-  ...(uploadedFileUrl(req, req.files?.imageFile?.[0]) ? { image: uploadedFileUrl(req, req.files.imageFile[0]) } : {}),
-  ...(uploadedImageUrls(req).length ? { images: uploadedImageUrls(req), image: uploadedImageUrls(req)[0] } : {}),
-  ...(uploadedFileUrl(req, req.files?.modelFile?.[0]) ? { modelUrl: uploadedFileUrl(req, req.files.modelFile[0]) } : {})
-});
+const productPayload = (req) => {
+  const body = { ...req.body };
+  for (const field of ["sizes", "images"]) {
+    if (typeof body[field] === "string") {
+      try { body[field] = JSON.parse(body[field]); }
+      catch { body[field] = body[field] ? body[field].split(",").map((value) => value.trim()).filter(Boolean) : []; }
+    }
+  }
+  return {
+    ...body,
+    ...(uploadedFileUrl(req, req.files?.imageFile?.[0]) ? { image: uploadedFileUrl(req, req.files.imageFile[0]) } : {}),
+    ...(uploadedImageUrls(req).length ? { images: uploadedImageUrls(req), image: uploadedImageUrls(req)[0] } : {}),
+    ...(uploadedFileUrl(req, req.files?.modelFile?.[0]) ? { modelUrl: uploadedFileUrl(req, req.files.modelFile[0]) } : {})
+  };
+};
 
 // CREATE
 const createProduct = async (req, res) => {
