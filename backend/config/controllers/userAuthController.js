@@ -1,14 +1,27 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 const User = require("../models/User");
 
-const { sendOtpEmail: sendVerificationEmail } = require("../services/emailService");
+const {
+  sendOtpEmail: sendVerificationEmail,
+  sendPasswordResetEmail
+} = require("../services/emailService");
 
 const createVerificationCode = () => Math.floor(
   100000 + Math.random() * 900000
 ).toString();
 
 const getVerificationExpiry = () => new Date(Date.now() + 10 * 60 * 1000);
+const getPasswordResetCodeHash = (code) => crypto
+  .createHmac("sha256", process.env.JWT_SECRET)
+  .update(code)
+  .digest("hex");
+const clearPasswordResetCode = (user) => {
+  user.passwordResetCodeHash = null;
+  user.passwordResetCodeExpires = null;
+  user.passwordResetCodeAttempts = 0;
+};
 
 
 // ========================================
@@ -320,10 +333,127 @@ const loginUser = async (req, res) => {
   }
 };
 
+const requestPasswordReset = async (req, res) => {
+  const email = String(req.body.email || "").toLowerCase().trim();
+  if (!email) {
+    return res.status(400).json({ message: "Email is required." });
+  }
+
+  const genericResponse = {
+    message: "If a verified account exists for that email, a reset code has been sent."
+  };
+
+  try {
+    const user = await User.findOne({ email, isVerified: true });
+    if (!user) {
+      return res.json(genericResponse);
+    }
+
+    const cooldownMs = 60 * 1000;
+    if (
+      user.passwordResetCodeRequestedAt &&
+      Date.now() - user.passwordResetCodeRequestedAt.getTime() < cooldownMs
+    ) {
+      return res.json(genericResponse);
+    }
+
+    const code = crypto.randomInt(100000, 1000000).toString();
+    user.passwordResetCodeHash = getPasswordResetCodeHash(code);
+    user.passwordResetCodeExpires = getVerificationExpiry();
+    user.passwordResetCodeAttempts = 0;
+    user.passwordResetCodeRequestedAt = new Date();
+    await user.save();
+
+    try {
+      await sendPasswordResetEmail(email, code);
+    } catch (error) {
+      clearPasswordResetCode(user);
+      user.passwordResetCodeRequestedAt = null;
+      await user.save();
+      console.error("Password reset email delivery failed:", error.message);
+      return res.status(503).json({
+        message: "Unable to send a password reset code right now. Please try again later."
+      });
+    }
+
+    return res.json(genericResponse);
+  } catch (error) {
+    console.error("Password reset request failed:", error);
+    return res.status(500).json({
+      message: "Unable to request a password reset right now."
+    });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  const email = String(req.body.email || "").toLowerCase().trim();
+  const code = String(req.body.code || "").trim();
+  const password = typeof req.body.password === "string" ? req.body.password : "";
+  const confirmPassword = typeof req.body.confirmPassword === "string" ? req.body.confirmPassword : "";
+
+  if (!email || !code || !password || !confirmPassword) {
+    return res.status(400).json({
+      message: "Email, reset code, new password and confirmation are required."
+    });
+  }
+
+  if (!/^\d{6}$/.test(code)) {
+    return res.status(400).json({ message: "Enter the 6-digit reset code." });
+  }
+
+  if (password.length < 6) {
+    return res.status(400).json({ message: "Password must be at least 6 characters." });
+  }
+
+  if (password !== confirmPassword) {
+    return res.status(400).json({ message: "Passwords do not match." });
+  }
+
+  try {
+    const user = await User.findOne({ email, isVerified: true });
+    const invalidCodeResponse = () => res.status(400).json({
+      message: "The reset code is invalid or expired. Request a new code and try again."
+    });
+
+    if (!user || !user.passwordResetCodeHash || !user.passwordResetCodeExpires) {
+      return invalidCodeResponse();
+    }
+
+    if (user.passwordResetCodeExpires < new Date() || user.passwordResetCodeAttempts >= 5) {
+      clearPasswordResetCode(user);
+      await user.save();
+      return invalidCodeResponse();
+    }
+
+    const expectedHash = Buffer.from(user.passwordResetCodeHash, "hex");
+    const submittedHash = Buffer.from(getPasswordResetCodeHash(code), "hex");
+    if (
+      expectedHash.length !== submittedHash.length ||
+      !crypto.timingSafeEqual(expectedHash, submittedHash)
+    ) {
+      user.passwordResetCodeAttempts += 1;
+      await user.save();
+      return invalidCodeResponse();
+    }
+
+    user.password = await bcrypt.hash(password, 10);
+    clearPasswordResetCode(user);
+    user.passwordResetCodeRequestedAt = null;
+    await user.save();
+
+    return res.json({ message: "Password reset successfully. You can now sign in." });
+  } catch (error) {
+    console.error("Password reset failed:", error);
+    return res.status(500).json({ message: "Unable to reset your password right now." });
+  }
+};
+
 
 module.exports = {
   registerUser,
   verifyEmail,
   resendOtp,
   loginUser,
+  requestPasswordReset,
+  resetPassword,
 };

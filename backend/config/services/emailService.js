@@ -107,7 +107,36 @@ const sendOtpEmail = async (email, otp) => {
   }
 };
 
+const sendPasswordResetEmail = async (email, code) => {
+  const { user, pass } = getGmailConfig();
+
+  if (!user || !pass) {
+    throw new Error("Password reset email is not configured.");
+  }
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: { user, pass }
+  });
+
+  await transporter.sendMail({
+    from: `"Khan Store" <${user}>`,
+    to: email,
+    subject: "Your Khan Store password reset code",
+    text: `Your password reset code is ${code}. It expires in 10 minutes. If you did not request this, you can ignore this email.`,
+    html: `
+      <div style="font-family: Arial, sans-serif; padding: 24px; color: #1f2937;">
+        <h2>Password reset</h2>
+        <p>Use this code to reset your Khan Store password:</p>
+        <div style="font-size: 32px; font-weight: 700; letter-spacing: 6px; margin: 20px 0; color: #111827;">${code}</div>
+        <p>This code expires in 10 minutes. If you did not request this, you can ignore this email.</p>
+      </div>
+    `
+  });
+};
+
 module.exports = {
   sendOtpEmail,
+  sendPasswordResetEmail,
   sendOrderStatusEmail
 };
