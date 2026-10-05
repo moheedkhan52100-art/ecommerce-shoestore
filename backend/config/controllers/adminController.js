@@ -6,6 +6,7 @@ const AdminLog = require("../models/AdminLog");
 const StoreSettings = require("../models/StoreSettings");
 const { logAdminAction } = require("../utils/logger");
 const emailService = require("../services/emailService");
+const { normalizeOrderMedia } = require("../utils/publicMedia");
 
 const listUsers = async (req, res) => {
   const users = await User.find().select("name email blocked createdAt").sort({ createdAt: -1 });
@@ -38,7 +39,7 @@ const listOrders = async (req, res) => {
     .populate("customer", "name email")
     .populate("items.product", "name image images")
     .sort({ createdAt: -1 });
-  res.json(orders);
+  res.json(orders.map((order) => normalizeOrderMedia(order, req)));
 };
 
 const listProductReviews = async (req, res) => {
@@ -97,7 +98,7 @@ const setOrderStatus = async (req, res) => {
     }
   });
 
-  res.json(order);
+  res.json(normalizeOrderMedia(order, req));
 };
 
 const listCategories = async (req, res) => res.json(await Category.find().sort({ name: 1 }));

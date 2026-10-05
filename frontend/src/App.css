@@ -1976,6 +1976,12 @@
   border: 1px solid #d9d0c3;
 }
 
+.modal-side-image-previews {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
 .product-modal-footer {
   display: flex;
   align-items: center;

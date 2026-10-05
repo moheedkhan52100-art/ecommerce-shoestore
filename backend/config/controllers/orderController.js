@@ -1,6 +1,7 @@
 const Order = require("../models/Order");
 const Product = require("../models/Product");
 const mongoose = require("mongoose");
+const { normalizeOrderMedia } = require("../utils/publicMedia");
 
 const restoreReservedStock = (reservations) => Promise.all(
   reservations.map(({ productId, quantity }) =>
@@ -11,7 +12,7 @@ const restoreReservedStock = (reservations) => Promise.all(
 const listMyOrders = async (req, res) => {
   try {
     const orders = await Order.find({ customer: req.user.id }).sort({ createdAt: -1 });
-    res.json(orders);
+    res.json(orders.map((order) => normalizeOrderMedia(order, req)));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -125,7 +126,7 @@ const createOrder = async (req, res) => {
       throw error;
     }
 
-    res.status(201).json(order);
+    res.status(201).json(normalizeOrderMedia(order, req));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

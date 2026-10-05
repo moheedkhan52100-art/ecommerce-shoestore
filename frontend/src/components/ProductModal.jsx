@@ -31,7 +31,8 @@ function ProductModal({ isOpen, onClose, mode = "add", productId = null, onSucce
   const [saving, setSaving] = useState(false);
   const [imagePreview, setImagePreview] = useState("");
   const [imageFile, setImageFile] = useState(null);
-  const [imageFiles, setImageFiles] = useState([]);
+  const [sideImagePreviews, setSideImagePreviews] = useState([]);
+  const [sideImageFiles, setSideImageFiles] = useState([]);
   const [modelFile, setModelFile] = useState(null);
   const [sizes, setSizes] = useState([]);
   const [sizeInput, setSizeInput] = useState("");
@@ -93,7 +94,8 @@ function ProductModal({ isOpen, onClose, mode = "add", productId = null, onSucce
         setSizes(data.sizes || []);
         setImagePreview(data.image || "");
         setImageFile(null);
-        setImageFiles([]);
+        setSideImagePreviews((data.images || []).filter((image) => image && image !== data.image));
+        setSideImageFiles([]);
         setModelFile(null);
         setError("");
         setLoading(false);
@@ -112,6 +114,7 @@ function ProductModal({ isOpen, onClose, mode = "add", productId = null, onSucce
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    if (name === "image") setImagePreview(value);
   };
 
   const addSize = () => {
@@ -149,12 +152,22 @@ function ProductModal({ isOpen, onClose, mode = "add", productId = null, onSucce
   };
 
   const handleImageFile = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleSideImageFiles = (event) => {
     const files = Array.from(event.target.files || []);
-    if (files.length) {
-      setImageFile(files[0]);
-      setImageFiles(files);
-      setImagePreview(URL.createObjectURL(files[0]));
+    if (files.length > 8) {
+      setError("Upload up to 8 side images at a time.");
+      event.target.value = "";
+      return;
     }
+    setError("");
+    setSideImageFiles(files);
+    setSideImagePreviews(files.map((file) => URL.createObjectURL(file)));
   };
 
   const handleSubmit = async (event) => {
@@ -166,7 +179,7 @@ function ProductModal({ isOpen, onClose, mode = "add", productId = null, onSucce
       const payload = {
         ...form,
         imageFile,
-        imageFiles,
+        imageFiles: sideImageFiles,
         modelFile,
         sizes,
         price: Number(form.price),
@@ -481,14 +494,13 @@ function ProductModal({ isOpen, onClose, mode = "add", productId = null, onSucce
                   </label>
                 </div>
 
-                {/* Image Dropzone & File picker */}
+                {/* Separate front and side product image uploads */}
                 <div className="modal-media-section">
                   <label className="form-full">
-                    <span>{isEdit ? "Replace / Upload Product Images" : "Upload Product Images"}</span>
+                    <span>Front Image (Main Product Image)</span>
                     <input
                       type="file"
                       accept="image/png,image/jpeg,image/webp"
-                      multiple
                       onChange={handleImageFile}
                     />
                   </label>
@@ -503,10 +515,31 @@ function ProductModal({ isOpen, onClose, mode = "add", productId = null, onSucce
                     {imagePreview && (
                       <div className="modal-image-preview">
                         <img src={imagePreview} alt="Product preview" />
-                        <small>Preview</small>
+                        <small>Front image preview</small>
                       </div>
                     )}
                   </div>
+
+                  <label className="form-full">
+                    <span>Side Images (up to 8; selecting new images replaces the current side images)</span>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      multiple
+                      onChange={handleSideImageFiles}
+                    />
+                  </label>
+
+                  {sideImagePreviews.length > 0 && (
+                    <div className="modal-side-image-previews" aria-label="Side image previews">
+                      {sideImagePreviews.map((image, index) => (
+                        <div className="modal-image-preview" key={`${image}-${index}`}>
+                          <img src={image} alt={`Side product image ${index + 1}`} />
+                          <small>Side image {index + 1}</small>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* 3D Model Option */}

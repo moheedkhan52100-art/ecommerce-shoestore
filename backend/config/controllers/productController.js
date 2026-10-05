@@ -1,8 +1,9 @@
 const Product = require("../models/Product");
 const { logAdminAction } = require("../utils/logger");
+const { normalizeProductMedia } = require("../utils/publicMedia");
 
-const uploadedFileUrl = (req, file) => file ? `${req.protocol}://${req.get("host")}/uploads/${file.filename}` : undefined;
-const uploadedImageUrls = (req) => (req.files?.imageFiles || []).map((file) => uploadedFileUrl(req, file));
+const uploadedFileUrl = (file) => file ? `/uploads/${file.filename}` : undefined;
+const uploadedImageUrls = (req) => (req.files?.imageFiles || []).map(uploadedFileUrl);
 
 const productPayload = (req) => {
   const body = { ...req.body };
@@ -14,9 +15,9 @@ const productPayload = (req) => {
   }
   return {
     ...body,
-    ...(uploadedFileUrl(req, req.files?.imageFile?.[0]) ? { image: uploadedFileUrl(req, req.files.imageFile[0]) } : {}),
-    ...(uploadedImageUrls(req).length ? { images: uploadedImageUrls(req), image: uploadedImageUrls(req)[0] } : {}),
-    ...(uploadedFileUrl(req, req.files?.modelFile?.[0]) ? { modelUrl: uploadedFileUrl(req, req.files.modelFile[0]) } : {})
+    ...(uploadedFileUrl(req.files?.imageFile?.[0]) ? { image: uploadedFileUrl(req.files.imageFile[0]) } : {}),
+    ...(uploadedImageUrls(req).length ? { images: uploadedImageUrls(req) } : {}),
+    ...(uploadedFileUrl(req.files?.modelFile?.[0]) ? { modelUrl: uploadedFileUrl(req.files.modelFile[0]) } : {})
   };
 };
 
@@ -40,7 +41,7 @@ const createProduct = async (req, res) => {
       }
     });
 
-    res.status(201).json(product);
+    res.status(201).json(normalizeProductMedia(product, req));
   } catch (error) {
     res.status(500).json({
       message: error.message
@@ -53,7 +54,7 @@ const getProducts = async (req, res) => {
   try {
     const products = await Product.find().sort({ createdAt: -1 });
 
-    res.json(products);
+    res.json(products.map((product) => normalizeProductMedia(product, req)));
   } catch (error) {
     res.status(500).json({
       message: error.message
@@ -72,7 +73,7 @@ const getProduct = async (req, res) => {
       });
     }
 
-    res.json(product);
+    res.json(normalizeProductMedia(product, req));
   } catch (error) {
     res.status(500).json({
       message: error.message
@@ -115,9 +116,13 @@ const createProductReview = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
     const previous = await Product.findById(req.params.id);
+    const payload = productPayload(req);
+    if (previous && payload.image !== previous.image && !req.files?.imageFiles?.length) {
+      payload.images = (previous.images || []).filter((image) => image !== previous.image);
+    }
     const product = await Product.findByIdAndUpdate(
       req.params.id,
-      productPayload(req),
+      payload,
       {
         new: true,
         runValidators: true
@@ -145,7 +150,7 @@ const updateProduct = async (req, res) => {
       }
     });
 
-    res.json(product);
+    res.json(normalizeProductMedia(product, req));
   } catch (error) {
     res.status(500).json({
       message: error.message

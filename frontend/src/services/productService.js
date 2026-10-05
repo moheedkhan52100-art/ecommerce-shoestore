@@ -8,10 +8,10 @@ const authConfig = () => ({
 });
 
 const productPayload = (product) => {
-  if (!product.imageFile && !product.modelFile) return product;
+  if (!product.imageFile && !product.imageFiles?.length && !product.modelFile) return product;
   const payload = new FormData();
   Object.entries(product).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && key !== "imageFile" && key !== "modelFile") {
+    if (value !== undefined && value !== null && key !== "imageFile" && key !== "imageFiles" && key !== "modelFile") {
       payload.append(key, Array.isArray(value) ? JSON.stringify(value) : value);
     }
   });

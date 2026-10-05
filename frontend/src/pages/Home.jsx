@@ -469,7 +469,7 @@ function Home() {
             <p>Our current favorites, selected for movement, texture, and the rhythm of everyday life.</p>
           </motion.div>
           <Swiper className="featured-carousel-swiper" modules={[Autoplay, EffectFade]} effect="fade" loop autoplay={{ delay: 4800, disableOnInteraction: false }}>
-            {featuredProducts.map((product) => <SwiperSlide key={productKey(product)}><Link className="featured-carousel-card" to={`/product/${product._id}`}><img className="featured-card-image" src={product.images?.[1] || product.image || fallbackImage} alt={product.name} /><div><span>{product.category || "Khan collection"}</span><strong>{product.name}</strong><b>{formatCurrency(product.price)}</b></div></Link></SwiperSlide>)}
+            {featuredProducts.map((product) => <SwiperSlide key={productKey(product)}><Link className="featured-carousel-card" to={`/product/${product._id}`}><img className="featured-card-image" src={product.image || fallbackImage} alt={product.name} /><div><span>{product.category || "Khan collection"}</span><strong>{product.name}</strong><b>{formatCurrency(product.price)}</b></div></Link></SwiperSlide>)}
           </Swiper>
         </section>
       )}
