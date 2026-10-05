@@ -5,9 +5,9 @@ const Order = require('../config/models/Order');
 const Product = require('../config/models/Product');
 const AdminLog = require('../config/models/AdminLog');
 const emailService = require('../config/services/emailService');
-const { createOrder } = require('../config/controllers/orderController');
+const { createOrder, listMyOrders } = require('../config/controllers/orderController');
 const { setOrderStatus } = require('../config/controllers/adminController');
-const { updateProduct } = require('../config/controllers/productController');
+const { createProductReview, updateProduct } = require('../config/controllers/productController');
 
 const createResponse = () => ({
   statusCode: 200,
@@ -20,6 +20,33 @@ const createResponse = () => ({
     this.body = body;
     return this;
   }
+});
+
+test('listMyOrders only returns the signed-in customer orders, newest first', async (t) => {
+  const originalFind = Order.find;
+  const customerId = '64b000000000000000000002';
+  const customerOrders = [{ _id: 'order-1', customer: customerId }];
+  let query;
+
+  t.after(() => {
+    Order.find = originalFind;
+  });
+
+  Order.find = (filter) => {
+    query = filter;
+    return {
+      sort: async (sortOrder) => {
+        assert.deepEqual(sortOrder, { createdAt: -1 });
+        return customerOrders;
+      }
+    };
+  };
+
+  const response = createResponse();
+  await listMyOrders({ user: { id: customerId } }, response);
+
+  assert.deepEqual(query, { customer: customerId });
+  assert.deepEqual(response.body, customerOrders);
 });
 
 test('createOrder stores catalog prices and calculates its total on the server', async (t) => {
@@ -140,4 +167,39 @@ test('product update keeps an explicitly empty size list', async (t) => {
 
   assert.deepEqual(savedPayload.sizes, []);
   assert.deepEqual(response.body.sizes, []);
+});
+
+test('createProductReview persists a valid five-star review', async (t) => {
+  const originalFindById = Product.findById;
+  const product = {
+    reviews: [],
+    save: async () => {}
+  };
+
+  t.after(() => {
+    Product.findById = originalFindById;
+  });
+
+  Product.findById = async () => product;
+  const response = createResponse();
+  await createProductReview({
+    params: { id: '64b000000000000000000001' },
+    body: { text: 'Excellent shoes', rating: 5 }
+  }, response);
+
+  assert.equal(response.statusCode, 201);
+  assert.equal(response.body.review.text, 'Excellent shoes');
+  assert.equal(response.body.review.rating, 5);
+  assert.equal(response.body.reviews.length, 1);
+});
+
+test('createProductReview rejects ratings outside one to five stars', async () => {
+  const response = createResponse();
+  await createProductReview({
+    params: { id: '64b000000000000000000001' },
+    body: { text: 'Excellent shoes', rating: 6 }
+  }, response);
+
+  assert.equal(response.statusCode, 400);
+  assert.match(response.body.message, /rating from 1 to 5 stars/i);
 });

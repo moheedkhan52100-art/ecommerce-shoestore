@@ -18,6 +18,7 @@ export const getAdminUsers = () => axios.get(`${API_URL}/users`, authConfig());
 export const updateUserBlocked = (id, blocked) =>
   axios.patch(`${API_URL}/users/${id}/block`, { blocked }, authConfig());
 export const getAdminOrders = () => axios.get(`${API_URL}/orders`, authConfig());
+export const getAdminReviews = () => axios.get(`${API_URL}/reviews`, authConfig());
 export const updateOrderStatus = (id, status) =>
   axios.patch(`${API_URL}/orders/${id}/status`, { status }, authConfig());
 export const getCategories = () => axios.get(`${API_URL}/categories`, authConfig());

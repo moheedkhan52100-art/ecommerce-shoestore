@@ -8,6 +8,7 @@ import "swiper/css";
 import "swiper/css/effect-fade";
 import { getProducts } from "../services/productService";
 import { addProductWithinStock, getCartStockMessage, notifyStoreToast, writeCart, writeWishlist } from "../services/storeService";
+import CurrencySelector from "../components/CurrencySelector";
 import ThemeToggle from "../components/ThemeToggle";
 import StoreFooter from "../components/StoreFooter";
 import { useStoreSettings } from "../context/storeSettings";
@@ -240,6 +241,7 @@ function Home() {
         </nav>
 
         <div className="store-actions" aria-label="Store actions">
+          <CurrencySelector />
           <button type="button" aria-label="Search products" title="Search products" onClick={() => setSearchOpen(!searchOpen)}><Search size={18} /></button>
           <button type="button" aria-label="Account and login" title="Account and login" onClick={() => setAccountOpen(!accountOpen)}><UserRound size={18} /></button>
           <button type="button" aria-label="Wishlist" title="Wishlist" onClick={() => setPanel("wishlist")}><Heart size={18} /></button>

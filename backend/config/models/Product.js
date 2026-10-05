@@ -1,5 +1,28 @@
 const mongoose = require("mongoose");
 
+const reviewSchema = new mongoose.Schema(
+  {
+    text: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 1000
+    },
+    rating: {
+      type: Number,
+      min: 0,
+      max: 5,
+      default: 0
+    },
+    author: {
+      type: String,
+      default: "Customer",
+      trim: true
+    }
+  },
+  { timestamps: true }
+);
+
 const productSchema = new mongoose.Schema(
   {
     name: {
@@ -82,6 +105,11 @@ const productSchema = new mongoose.Schema(
     modelUrl: {
       type: String,
       default: ""
+    },
+
+    reviews: {
+      type: [reviewSchema],
+      default: []
     }
   },
   {

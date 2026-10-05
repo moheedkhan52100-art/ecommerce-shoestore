@@ -91,6 +91,7 @@
   width: auto;
   padding: 0;
   transform: translateY(-50%);
+  border: 0;
   border-radius: 0;
   background: transparent;
   color: #81776c;
@@ -362,6 +363,190 @@
   margin-top: 2rem;
 }
 
+.account-orders {
+  margin-top: 3rem;
+}
+
+.account-orders-heading,
+.account-order-heading,
+.account-order-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.account-orders-heading {
+  margin-bottom: 1rem;
+}
+
+.account-orders-heading h2 {
+  margin: 0;
+}
+
+.account-order-card {
+  margin-bottom: 1rem;
+  padding: 1.25rem;
+  border: 1px solid #ddd3c6;
+  background: #fbf9f5;
+}
+
+.account-order-heading {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #ddd3c6;
+}
+
+.account-order-heading > div,
+.account-order-product {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.account-order-heading > div span,
+.account-order-product > span,
+.account-order-footer > span,
+.account-orders-message {
+  color: #746d64;
+  font-size: 0.85rem;
+}
+
+.account-order-status {
+  padding: 0.4rem 0.65rem;
+  border-radius: 999px;
+  background: #f3eadc;
+  color: #694b13;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.account-order-status.status-delivered,
+.account-order-status.status-paid {
+  background: #e5f2e8;
+  color: #28613a;
+}
+
+.account-order-items {
+  display: grid;
+}
+
+.account-order-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid #eee7dd;
+}
+
+.account-order-item > img {
+  width: 72px;
+  height: 82px;
+  object-fit: cover;
+  background: #eee6dc;
+}
+
+.account-order-product {
+  flex: 1;
+  min-width: 0;
+}
+
+.account-review-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+
+.account-review-form .review-star-picker {
+  flex-basis: 100%;
+}
+
+.account-review-form input {
+  flex: 1 1 220px;
+  min-width: 0;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid #d9d0c3;
+  background: transparent;
+  color: var(--ink);
+}
+
+.account-review-form > button {
+  padding: 0.6rem 0.8rem;
+  border: 0;
+  background: #e9a51a;
+  color: #211b14;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.account-review-form > button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.account-review-form .form-error {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.account-review-success {
+  margin: 0.3rem 0 0;
+  color: #28613a;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.account-order-footer {
+  padding-top: 1rem;
+}
+
+:root[data-theme="dark"] .account-page {
+  color: var(--text);
+}
+
+:root[data-theme="dark"] .account-panel,
+:root[data-theme="dark"] .account-order-card {
+  border-color: var(--line);
+  background: var(--panel-strong);
+  color: var(--text);
+}
+
+:root[data-theme="dark"] .account-panel p:not(.eyebrow),
+:root[data-theme="dark"] .account-order-heading > div span,
+:root[data-theme="dark"] .account-order-product > span,
+:root[data-theme="dark"] .account-order-footer > span,
+:root[data-theme="dark"] .account-orders-message {
+  color: var(--muted);
+}
+
+:root[data-theme="dark"] .account-stat,
+:root[data-theme="dark"] .account-order-heading strong,
+:root[data-theme="dark"] .account-order-product > strong,
+:root[data-theme="dark"] .account-order-footer strong {
+  color: var(--ink);
+}
+
+:root[data-theme="dark"] .account-order-heading,
+:root[data-theme="dark"] .account-order-item {
+  border-color: var(--line);
+}
+
+:root[data-theme="dark"] .account-review-form input {
+  border-color: var(--line-strong);
+  background: var(--bg-strong);
+  color: var(--ink);
+}
+
+:root[data-theme="dark"] .account-review-form input::placeholder {
+  color: var(--muted);
+}
+
+:root[data-theme="dark"] .account-review-form .review-star-picker button:not(.is-selected) {
+  background: transparent;
+  color: var(--line-strong);
+}
+
 @media (max-width: 760px) {
   .account-page-header {
     flex-direction: column;
@@ -369,6 +554,16 @@
 
   .account-grid {
     grid-template-columns: 1fr;
+  }
+
+  .account-orders-heading,
+  .account-order-footer {
+    align-items: flex-start;
+  }
+
+  .account-order-item > img {
+    width: 56px;
+    height: 68px;
   }
 }
 
@@ -378,6 +573,141 @@
   width: min(1200px, calc(100% - 32px));
   margin: 0 auto;
   padding: 40px 0 64px;
+}
+
+.admin-reviews-page {
+  width: min(1200px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 1.5rem 0 3rem;
+}
+
+.admin-reviews-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.admin-reviews-summary > div {
+  display: grid;
+  min-width: 190px;
+  gap: 0.35rem;
+  padding: 1.1rem 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--panel-strong);
+}
+
+.admin-reviews-summary span,
+.admin-reviews-toolbar > span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.admin-reviews-summary strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--ink);
+  font-size: 1.35rem;
+}
+
+.admin-reviews-summary strong svg,
+.admin-review-rating {
+  color: var(--bronze-deep);
+}
+
+.admin-reviews-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.admin-reviews-search {
+  display: flex;
+  width: min(100%, 520px);
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  background: var(--panel-strong);
+  color: var(--muted);
+}
+
+.admin-reviews-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+}
+
+.admin-reviews-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.admin-review-card {
+  padding: 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--panel-strong);
+}
+
+.admin-review-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.admin-review-card-heading .eyebrow {
+  margin-bottom: 0.25rem;
+}
+
+.admin-review-card-heading > div > span,
+.admin-review-card-heading time {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.admin-review-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-top: 0.9rem;
+}
+
+.admin-review-rating strong {
+  margin-left: 0.4rem;
+  color: var(--ink);
+  font-size: 0.8rem;
+}
+
+.admin-review-text {
+  margin: 0.85rem 0 0;
+  color: var(--text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.admin-reviews-message {
+  padding: 1.5rem;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-lg);
+  color: var(--muted);
+  text-align: center;
+}
+
+:root[data-theme="dark"] .admin-reviews-search,
+:root[data-theme="dark"] .admin-review-card,
+:root[data-theme="dark"] .admin-reviews-summary > div {
+  background: var(--panel-strong);
+  color: var(--text);
 }
 
 .page-header,
@@ -3550,6 +3880,16 @@ a.header-icon-btn {
   font-size: 0.78rem;
 }
 
+:root[data-theme="dark"] .dashboard-alerts-card .alert-count-pill {
+  background: #e9a51a;
+  color: #211b14;
+}
+
+:root[data-theme="dark"] .dashboard-alerts-card .low-stock-pill {
+  background: #542b2b;
+  color: #fecaca;
+}
+
 .dashboard-quick-add-cta .primary-button {
   width: 100%;
 }
@@ -5411,4 +5751,3 @@ a.header-icon-btn {
   outline: 3px solid color-mix(in srgb, var(--bronze) 55%, transparent);
   outline-offset: 2px;
 }
-

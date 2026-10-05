@@ -7,6 +7,7 @@ import { getProducts } from "../services/productService";
 const adminPages = [
   { label: "Dashboard", path: "/admin" },
   { label: "Products", path: "/products" },
+  { label: "Reviews", path: "/admin/reviews" },
   { label: "Orders", path: "/admin/manage?tab=orders" },
   { label: "Customers", path: "/admin/manage?tab=users" },
   { label: "Categories", path: "/admin/manage?tab=categories" },

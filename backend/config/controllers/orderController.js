@@ -8,6 +8,15 @@ const restoreReservedStock = (reservations) => Promise.all(
   )
 );
 
+const listMyOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({ customer: req.user.id }).sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 const createOrder = async (req, res) => {
   try {
     const { items, shipping, paymentMethod = "cash" } = req.body || {};
@@ -122,4 +131,4 @@ const createOrder = async (req, res) => {
   }
 };
 
-module.exports = { createOrder };
+module.exports = { createOrder, listMyOrders };

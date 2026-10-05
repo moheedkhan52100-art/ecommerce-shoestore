@@ -6,6 +6,7 @@ import {
   Users,
   FolderTree,
   Activity,
+  Star,
   Settings,
   LogOut,
   ExternalLink,
@@ -55,6 +56,12 @@ function AdminSidebar() {
       label: "Products",
       icon: Package,
       active: isCurrent("/products")
+    },
+    {
+      to: "/admin/reviews",
+      label: "Reviews",
+      icon: Star,
+      active: isCurrent("/admin/reviews")
     },
     {
       to: "/admin/manage?tab=users",

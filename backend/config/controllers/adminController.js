@@ -1,6 +1,7 @@
 const Category = require("../models/Category");
 const Order = require("../models/Order");
 const User = require("../models/User");
+const Product = require("../models/Product");
 const AdminLog = require("../models/AdminLog");
 const StoreSettings = require("../models/StoreSettings");
 const { logAdminAction } = require("../utils/logger");
@@ -38,6 +39,30 @@ const listOrders = async (req, res) => {
     .populate("items.product", "name image images")
     .sort({ createdAt: -1 });
   res.json(orders);
+};
+
+const listProductReviews = async (req, res) => {
+  try {
+    const products = await Product.find({ "reviews.0": { $exists: true } })
+      .select("name reviews")
+      .sort({ updatedAt: -1 });
+
+    const reviews = products.flatMap((product) =>
+      product.reviews.map((review) => ({
+        id: review._id,
+        productId: product._id,
+        productName: product.name,
+        text: review.text,
+        rating: review.rating,
+        author: review.author,
+        createdAt: review.createdAt
+      }))
+    ).sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt));
+
+    res.json(reviews);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 const setOrderStatus = async (req, res) => {
@@ -226,6 +251,7 @@ module.exports = {
   listUsers,
   setUserBlocked,
   listOrders,
+  listProductReviews,
   setOrderStatus,
   listCategories,
   getStoreSettings,
@@ -237,4 +263,3 @@ module.exports = {
   clearLogs,
   createLog
 };
-

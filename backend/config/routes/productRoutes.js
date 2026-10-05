@@ -7,6 +7,7 @@ const {
   createProduct,
   getProducts,
   getProduct,
+  createProductReview,
   updateProduct,
   deleteProduct
 } = require("../controllers/productController");
@@ -27,6 +28,8 @@ router.post("/", requireAdmin, upload.fields([{ name: "imageFile", maxCount: 1 }
 router.get("/", getProducts);
 
 router.get("/:id", getProduct);
+
+router.post("/:id/reviews", createProductReview);
 
 router.put("/:id", requireAdmin, upload.fields([{ name: "imageFile", maxCount: 1 }, { name: "imageFiles", maxCount: 8 }, { name: "modelFile", maxCount: 1 }]), updateProduct);
 

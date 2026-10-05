@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Heart, RotateCw, ShoppingBag, Star } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { getProduct, getProducts } from "../services/productService";
+import { createProductReview, getProduct, getProducts } from "../services/productService";
 import { addProductWithinStock, notifyStoreToast, readCart, readWishlist, writeCart, writeWishlist } from "../services/storeService";
 import ShoeModel from "../components/ShoeModel";
+import ReviewStars from "../components/ReviewStars";
 import { useStoreSettings } from "../context/storeSettings";
 
 const fallbackImage = "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1200&q=85";
@@ -32,6 +33,9 @@ function ProductDetails() {
   const [mediaMode, setMediaMode] = useState("image");
   const [selectedImage, setSelectedImage] = useState("");
   const [review, setReview] = useState("");
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewError, setReviewError] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [showSizeGuide, setShowSizeGuide] = useState(false);
   const [cartNotice, setCartNotice] = useState("");
   const currentProductId = product?._id;
@@ -141,6 +145,30 @@ function ProductDetails() {
     writeWishlist(nextWishlist);
     setSaved(!exists);
     notifyStoreToast(exists ? `Removed ${product.name} from your wishlist.` : `Added ${product.name} to your wishlist.`);
+  };
+
+  const submitReview = async (event) => {
+    event.preventDefault();
+    const text = review.trim();
+    if (!text || !reviewRating) {
+      setReviewError(!text ? "Please enter a review before posting." : "Please select a star rating.");
+      return;
+    }
+
+    setReviewSubmitting(true);
+    setReviewError("");
+    try {
+      const response = await createProductReview(product._id, text, reviewRating);
+      setProduct((current) => current
+        ? { ...current, reviews: response.data.reviews }
+        : current);
+      setReview("");
+      setReviewRating(0);
+    } catch (submitError) {
+      setReviewError(submitError.response?.data?.message || "Unable to post your review. Please try again.");
+    } finally {
+      setReviewSubmitting(false);
+    }
   };
 
   return (
@@ -283,7 +311,54 @@ function ProductDetails() {
             <button className={`detail-wishlist-button ${saved ? "is-saved" : ""}`} type="button" onClick={toggleWishlist} aria-label="Add to wishlist"><Heart size={18} fill={saved ? "currentColor" : "none"} /></button>
           </div>
           {cartNotice && <p className="form-error" role="alert">{cartNotice}</p>}
-          <section className="reviews-section"><div className="reviews-heading"><h2>Reviews</h2><span><Star size={15} fill="currentColor" /> 4.8 · 24 reviews</span></div><div className="review-card"><strong>"The pair I reach for every day."</strong><span>Verified Khan customer</span></div><form className="review-form" onSubmit={(event) => { event.preventDefault(); setReview(""); }}><input value={review} onChange={(event) => setReview(event.target.value)} placeholder="Share your experience" /><button type="submit" aria-label="Submit review">Post</button></form></section>
+          <section className="reviews-section">
+            <div className="reviews-heading">
+              <h2>Reviews</h2>
+              <span>
+                <Star size={15} fill="currentColor" />
+                {product.reviews?.some((item) => item.rating > 0)
+                  ? `${(product.reviews.reduce((total, item) => total + (item.rating || 0), 0) / product.reviews.filter((item) => item.rating > 0).length).toFixed(1)} · `
+                  : ""}
+                {product.reviews?.length || 0} reviews
+              </span>
+            </div>
+            {product.reviews?.length ? (
+              [...product.reviews].reverse().map((item) => (
+                <article className="review-card" key={item._id || `${item.createdAt}-${item.text}`}>
+                  {item.rating > 0 && (
+                    <span className="review-rating" aria-label={`${item.rating} out of 5 stars`}>
+                      {Array.from({ length: 5 }, (_, index) => (
+                        <Star key={index} size={14} fill={index < item.rating ? "currentColor" : "none"} />
+                      ))}
+                    </span>
+                  )}
+                  <strong>{item.text}</strong>
+                  <span>{item.author || "Customer"}{item.createdAt ? ` · ${new Date(item.createdAt).toLocaleDateString()}` : ""}</span>
+                </article>
+              ))
+            ) : (
+              <p className="review-empty">No reviews yet. Be the first to share your experience.</p>
+            )}
+            <form className="review-form" onSubmit={submitReview}>
+              <ReviewStars
+                value={reviewRating}
+                onChange={setReviewRating}
+                disabled={reviewSubmitting}
+              />
+              <input
+                value={review}
+                onChange={(event) => setReview(event.target.value)}
+                placeholder="Share your experience"
+                maxLength={1000}
+                aria-label="Write a review"
+                disabled={reviewSubmitting}
+              />
+              <button type="submit" aria-label="Submit review" disabled={reviewSubmitting || !review.trim() || !reviewRating}>
+                {reviewSubmitting ? "Posting..." : "Post"}
+              </button>
+            </form>
+            {reviewError && <p className="form-error" role="alert">{reviewError}</p>}
+          </section>
         </div>
       </section>
 

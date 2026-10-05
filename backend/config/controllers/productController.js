@@ -80,6 +80,37 @@ const getProduct = async (req, res) => {
   }
 };
 
+const createProductReview = async (req, res) => {
+  try {
+    const text = typeof req.body?.text === "string" ? req.body.text.trim() : "";
+    const rating = Number(req.body?.rating);
+    if (!text) {
+      return res.status(400).json({ message: "Review text is required" });
+    }
+    if (text.length > 1000) {
+      return res.status(400).json({ message: "Review must be 1000 characters or fewer" });
+    }
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      return res.status(400).json({ message: "Select a rating from 1 to 5 stars" });
+    }
+
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    product.reviews.push({ text, rating });
+    await product.save();
+
+    res.status(201).json({
+      review: product.reviews[product.reviews.length - 1],
+      reviews: product.reviews
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // UPDATE
 const updateProduct = async (req, res) => {
   try {
@@ -162,6 +193,7 @@ module.exports = {
   createProduct,
   getProducts,
   getProduct,
+  createProductReview,
   updateProduct,
   deleteProduct
 };

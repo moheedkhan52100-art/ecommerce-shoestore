@@ -29,6 +29,14 @@ export const getProduct = (id) => {
   return axios.get(`${API_URL}/${id}`);
 };
 
+export const createProductReview = (id, text, rating) => {
+  return axios.post(`${API_URL}/${id}/reviews`, { text, rating });
+};
+
+export const getMyOrders = () => {
+  return axios.get(`${API_BASE_URL}/orders/mine`, authConfig());
+};
+
 export const createProduct = (product) => {
   return axios.post(API_URL, productPayload(product), authConfig());
 };

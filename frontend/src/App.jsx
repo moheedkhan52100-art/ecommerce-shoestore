@@ -14,6 +14,7 @@ import Checkout from "./pages/Checkout";
 import Wishlist from "./pages/Wishlist";
 import Support from "./pages/Support";
 import AdminManagement from "./pages/AdminManagement";
+import Reviews from "./pages/Reviews";
 import { ThemeProvider } from "./context/ThemeContext";
 import StoreHeader from "./components/StoreHeader";
 import StoreFooter from "./components/StoreFooter";
@@ -96,6 +97,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <AdminManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/reviews"
+            element={
+              <ProtectedRoute>
+                <Reviews />
               </ProtectedRoute>
             }
           />

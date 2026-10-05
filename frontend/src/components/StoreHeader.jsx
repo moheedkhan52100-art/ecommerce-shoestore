@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Heart, Search, ShoppingBag, UserRound } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { readCart, readWishlist } from "../services/storeService";
+import CurrencySelector from "./CurrencySelector";
 import ThemeToggle from "./ThemeToggle";
 
 function StoreHeader({ shopNavigation = false }) {
@@ -64,6 +65,7 @@ function StoreHeader({ shopNavigation = false }) {
       </nav>
 
       <div className="store-actions" aria-label="Store actions">
+        <CurrencySelector />
         <button
           type="button"
           aria-label="Search products"
